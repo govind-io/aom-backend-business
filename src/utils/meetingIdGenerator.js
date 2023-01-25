@@ -1,11 +1,18 @@
-export default function generateUniqueString(username) {
-  const timestamp = new Date().getTime();
-  return `${username}${timestamp}`
-    .split("")
-    .reduce((acc, char) => {
-      acc += char.charCodeAt(0);
-      return acc;
-    }, 0)
-    .toString(36)
-    .slice(-6);
+export default function generateRandomString(secretKey) {
+  var result = "";
+  var characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+  for (var i = 0; i < 9; i++) {
+    result += characters.charAt(
+      (Math.floor(Math.random() * characters.length) +
+        secretKey.charCodeAt(i % secretKey.length)) %
+        characters.length
+    );
+    if ((i + 1) % 3 === 0 && i !== 8) {
+      result += "-";
+    }
+  }
+
+  return result;
 }
