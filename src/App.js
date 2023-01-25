@@ -5,7 +5,6 @@ import path from "path";
 import mongoose from "mongoose";
 import cors from "cors";
 import { database } from "./database/index.js";
-import jsonwebtoken from "jsonwebtoken";
 import { userRouter } from "./routers/users.js";
 import { roomRouter } from "./routers/rooms.js";
 
