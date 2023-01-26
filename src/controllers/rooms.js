@@ -1,4 +1,5 @@
 import axios from "axios";
+import mongoose from "mongoose";
 import { Rooms } from "../database/Rooms/index.js";
 import generateUniqueString from "../utils/meetingIdGenerator.js";
 
@@ -12,6 +13,12 @@ export const generateToken = async (req, res) => {
       message:
         "Room does not exists, You need to create a room before generating a token",
     });
+
+  if (!room.participants.includes(req.user._id)) {
+    room.participants = room.participants.concat(req.user._id);
+
+    await room.save();
+  }
 
   const formattedData = await room.populate("participants moderator");
 
@@ -71,9 +78,10 @@ export const createRoom = async (req, res) => {
 
         await room.save();
       }
+      const formattedData = await room.populate("participants moderator");
       return res
         .status(200)
-        .send({ message: "Room Created Successfully", data: room });
+        .send({ message: "Room Created Successfully", data: formattedData });
     } catch (e) {
       return res.status(500).send({ message: "Something went wrong" });
     }
@@ -100,8 +108,10 @@ export const createRoom = async (req, res) => {
     });
 
     await room.save();
-
-    res.status(200).send({ message: "Room Created Successfully", data: room });
+    const formattedData = await room.populate("participants moderator");
+    res
+      .status(200)
+      .send({ message: "Room Created Successfully", data: formattedData });
   } catch (e) {
     console.log("error occured", e.message);
     return res.status(500).send({ message: "Something went wrong" });
