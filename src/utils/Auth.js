@@ -29,7 +29,7 @@ export const userAuth = async (req, res, next) => {
       const newUser = new Users({
         username: user.username,
         userId: user.user_id,
-        name: user.name || user.username,
+        name: user.name || "",
         token,
         meetingId: generateRandomString(user.username).toUpperCase(),
       });

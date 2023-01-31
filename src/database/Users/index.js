@@ -6,13 +6,7 @@ import mongoose from "mongoose";
 const UsersSchema = mongoose.Schema({
   name: {
     type: String,
-    required: true,
     trim: true,
-    validate: (val) => {
-      if (val.length < 6) {
-        throw new Error("Name should be minimum 6 character long");
-      }
-    },
   },
   username: {
     type: String,
