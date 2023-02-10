@@ -25,6 +25,14 @@ const RoomsSchema = mongoose.Schema({
     required: true,
     ref: "Users",
   },
+  pin: { type: String },
+  passcode: { type: Boolean },
+  start: { type: Date },
+  end: { type: Date },
+  deleted: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 export const Rooms = mongoose.model("Rooms", RoomsSchema);

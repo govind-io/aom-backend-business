@@ -5,14 +5,21 @@ import generateUniqueString from "../utils/meetingIdGenerator.js";
 
 export const generateToken = async (req, res) => {
   const roomId = req.params.id;
+  const { pin } = req.body;
 
   const room = await Rooms.findOne({ meetingId: roomId });
 
-  if (!room)
+  if (!room || room.deleted)
     return res.status(404).send({
       message:
         "Room does not exists, You need to create a room before generating a token",
     });
+
+  if (room.passcode) {
+    if (room.pin.toLowerCase() !== pin?.toLowerCase()) {
+      return res.status(400).send({ message: "Incorrect Passcode" });
+    }
+  }
 
   if (!room.participants.includes(req.user._id)) {
     room.participants = room.participants.concat(req.user._id);
@@ -29,7 +36,13 @@ export const generateToken = async (req, res) => {
 };
 
 export const createRoom = async (req, res) => {
-  const { name, personal } = req.body;
+  const { name, personal, passcode, pin, start, end } = req.body;
+
+  if (passcode && !pin) {
+    return res
+      .status(400)
+      .send({ message: "Passcode is required when passcode is enabled" });
+  }
 
   const generateMeetToken = (room) => {
     return axios({
@@ -64,6 +77,10 @@ export const createRoom = async (req, res) => {
         room.name = name || personalMeetingId;
         room.token = token;
         room.moderator = req.user._id;
+        room.passcode = passcode;
+        room.pin = passcode ? pin : undefined;
+        room.start = start;
+        room.end = end;
 
         await room.save();
       } else {
@@ -74,6 +91,10 @@ export const createRoom = async (req, res) => {
           token,
           moderator: req.user._id,
           meetingId: personalMeetingId,
+          passcode,
+          pin: passcode ? pin : undefined,
+          start,
+          end,
         });
 
         await room.save();
@@ -105,6 +126,10 @@ export const createRoom = async (req, res) => {
       meetingId: randomMeetingId,
       participants: [req.user._id],
       messages: [],
+      passcode,
+      pin: passcode ? pin : undefined,
+      start,
+      end,
     });
 
     await room.save();
@@ -116,4 +141,25 @@ export const createRoom = async (req, res) => {
     console.log("error occured", e.message);
     return res.status(500).send({ message: "Something went wrong" });
   }
+};
+
+export const deleteRoom = async (req, res) => {
+  const roomId = req.params.id;
+
+  console.log({ roomId });
+
+  const room = await Rooms.findOne({ meetingId: roomId });
+
+  if (!room || room.deleted)
+    return res.status(404).send({ message: "Room not Found" });
+
+  if (!room.moderator.equals(req.user._id)) {
+    return res.status(401).send({ message: "Unauthorized access" });
+  }
+
+  room.deleted = true;
+
+  await room.save();
+
+  return res.status(200).send({ message: "Meeting deleted succesfully" });
 };
