@@ -81,6 +81,7 @@ export const createRoom = async (req, res) => {
         room.pin = passcode ? pin : undefined;
         room.start = start;
         room.end = end;
+        room.deleted = false;
 
         await room.save();
       } else {
@@ -95,6 +96,7 @@ export const createRoom = async (req, res) => {
           pin: passcode ? pin : undefined,
           start,
           end,
+          deleted: false,
         });
 
         await room.save();
@@ -130,6 +132,7 @@ export const createRoom = async (req, res) => {
       pin: passcode ? pin : undefined,
       start,
       end,
+      deleted: false,
     });
 
     await room.save();
@@ -154,7 +157,7 @@ export const deleteRoom = async (req, res) => {
     return res.status(404).send({ message: "Room not Found" });
 
   if (!room.moderator.equals(req.user._id)) {
-    return res.status(401).send({ message: "Unauthorized access" });
+    return res.status(400).send({ message: "Unauthorized access" });
   }
 
   room.deleted = true;
