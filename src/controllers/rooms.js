@@ -149,8 +149,6 @@ export const createRoom = async (req, res) => {
 export const deleteRoom = async (req, res) => {
   const roomId = req.params.id;
 
-  console.log({ roomId });
-
   const room = await Rooms.findOne({ meetingId: roomId });
 
   if (!room || room.deleted)
