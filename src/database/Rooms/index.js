@@ -2,13 +2,7 @@ import mongoose from "mongoose";
 const RoomsSchema = mongoose.Schema({
   name: {
     type: String,
-    required: true,
     trim: true,
-    validate: (val) => {
-      if (val.length < 6) {
-        throw new Error("Name should be minimum 6 character long");
-      }
-    },
   },
   meetingId: {
     type: String,

@@ -74,7 +74,7 @@ export const createRoom = async (req, res) => {
       if (room) {
         room.participants = [req.user._id];
         room.messages = [];
-        room.name = name || personalMeetingId;
+        room.name = name;
         room.token = token;
         room.moderator = req.user._id;
         room.passcode = passcode;
@@ -86,7 +86,7 @@ export const createRoom = async (req, res) => {
         await room.save();
       } else {
         room = new Rooms({
-          name: name || personalMeetingId,
+          name: name,
           messages: [],
           participants: [req.user._id],
           token,
@@ -122,7 +122,7 @@ export const createRoom = async (req, res) => {
     const token = response.data.token;
 
     const room = new Rooms({
-      name: name || randomMeetingId,
+      name: name,
       moderator: req.user._id,
       token,
       meetingId: randomMeetingId,
