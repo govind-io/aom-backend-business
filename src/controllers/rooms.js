@@ -1,6 +1,7 @@
 import axios from "axios";
 import mongoose from "mongoose";
 import { Rooms } from "../database/Rooms/index.js";
+import { StringToISO } from "../utils/DateUtils.js";
 import generateUniqueString from "../utils/meetingIdGenerator.js";
 
 export const generateToken = async (req, res) => {
@@ -143,6 +144,28 @@ export const createRoom = async (req, res) => {
   } catch (e) {
     console.log("error occured", e.message);
     return res.status(500).send({ message: "Something went wrong" });
+  }
+};
+
+export const getRooms = async (req, res) => {
+  try {
+    const startDate = StringToISO(req.query.startDate);
+    const nextDay = new Date(startDate);
+    nextDay.setTime(nextDay.getTime() + 24 * 60 * 60 * 1000);
+
+    console.log({ nextDay, startDate });
+
+    const rooms = await Rooms.find({
+      start: {
+        $gte: startDate,
+        $lt: nextDay.toISOString(),
+      },
+    });
+
+    res.status(200).send({ data: rooms, message: "Rooms fetched succefully" });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).send({ message: "Something went wrong" });
   }
 };
 
