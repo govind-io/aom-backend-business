@@ -3,9 +3,7 @@ export const StringToISO = (dateString) => {
   const localDate = new Date(dateString);
 
   // Convert the local time to UTC
-  const utcDate = new Date(
-    localDate.getTime() + localDate.getTimezoneOffset() * 60000
-  );
+  const utcDate = localDate;
 
   // Set the time to midnight UTC
   utcDate.setUTCHours(0, 0, 0, 0);

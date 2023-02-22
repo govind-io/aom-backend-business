@@ -153,14 +153,13 @@ export const getRooms = async (req, res) => {
     const nextDay = new Date(startDate);
     nextDay.setTime(nextDay.getTime() + 24 * 60 * 60 * 1000);
 
-    console.log({ nextDay, startDate });
-
     const rooms = await Rooms.find({
       start: {
         $gte: startDate,
         $lt: nextDay.toISOString(),
       },
-    });
+      moderator: req.user._id,
+    }).populate("participants moderator");
 
     res.status(200).send({ data: rooms, message: "Rooms fetched succefully" });
   } catch (error) {
