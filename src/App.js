@@ -7,6 +7,7 @@ import cors from "cors";
 import { database } from "./database/index.js";
 import { userRouter } from "./routers/users.js";
 import { roomRouter } from "./routers/rooms.js";
+import axios from "axios";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,7 +24,39 @@ app.use(cors());
 app.use("/user", userRouter);
 app.use("/room", roomRouter);
 
-app.get("/healthcheck", (req, res) => {
+app.get("/healthcheck", async (req, res) => {
+  try {
+    const response = await axios({
+      method: "GET",
+      url: `${process.env.MEET_FRONTEND_URL}`,
+    });
+
+    if (response.status !== 200) {
+      return res
+        .status(503)
+        .send({ message: "Meet frontend service not active" });
+    }
+  } catch (e) {
+    return res
+      .status(503)
+      .send({ message: "Meet frontend service not active" });
+  }
+
+  try {
+    const response = await axios({
+      method: "GET",
+      url: `${process.env.MEET_URL}/healthcheck`,
+    });
+
+    if (response.status !== 200) {
+      return res
+        .status(503)
+        .send({ message: "Meet backend service not active" });
+    }
+  } catch (e) {
+    return res.status(503).send({ message: "Meet backend service not active" });
+  }
+
   if (mongoose.connection.readyState === 1) {
     return res.status(200).send("Ok");
   }
