@@ -2,6 +2,7 @@ import axios from "axios";
 import mongoose from "mongoose";
 import { Rooms } from "../database/Rooms/index.js";
 import { StringToISO } from "../utils/DateUtils.js";
+import { getRoomsCountForMonthAndModerator } from "../utils/GetRoomCountForMonth.js";
 import generateUniqueString from "../utils/meetingIdGenerator.js";
 
 export const generateToken = async (req, res) => {
@@ -185,4 +186,21 @@ export const deleteRoom = async (req, res) => {
   await room.save();
 
   return res.status(200).send({ message: "Meeting deleted succesfully" });
+};
+
+export const getRoomCountsByDate = async (req, res) => {
+  const month = req.query.month;
+
+  if (month <= 0 && month > 12) {
+    return res.status;
+  }
+
+  const count = await getRoomsCountForMonthAndModerator(
+    parseInt(month),
+    req.user._id
+  );
+
+  return res
+    .status(200)
+    .send({ data: count, message: "Counts extracted succesfully" });
 };
