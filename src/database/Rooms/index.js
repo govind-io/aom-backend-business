@@ -29,4 +29,13 @@ const RoomsSchema = mongoose.Schema({
   },
 });
 
+RoomsSchema.methods.toJSON = function () {
+  const room = this;
+  const roomObject = room.toObject();
+  delete roomObject.participants
+  delete roomObject.messages
+
+  return roomObject;
+};
+
 export const Rooms = mongoose.model("Rooms", RoomsSchema);

@@ -1,5 +1,4 @@
 import axios from "axios";
-import mongoose from "mongoose";
 import { Rooms } from "../database/Rooms/index.js";
 import { StringToISO } from "../utils/DateUtils.js";
 import { getRoomsCountForMonthAndModerator } from "../utils/GetRoomCountForMonth.js";
@@ -29,7 +28,7 @@ export const generateToken = async (req, res) => {
     await room.save();
   }
 
-  const formattedData = await room.populate("participants moderator");
+  const formattedData = await room.populate("moderator");
 
   return res.status(200).send({
     data: formattedData,
@@ -103,7 +102,7 @@ export const createRoom = async (req, res) => {
 
         await room.save();
       }
-      const formattedData = await room.populate("participants moderator");
+      const formattedData = await room.populate("moderator");
       return res
         .status(200)
         .send({ message: "Room Created Successfully", data: formattedData });
@@ -138,7 +137,7 @@ export const createRoom = async (req, res) => {
     });
 
     await room.save();
-    const formattedData = await room.populate("participants moderator");
+    const formattedData = await room.populate("moderator");
     res
       .status(200)
       .send({ message: "Room Created Successfully", data: formattedData });
@@ -160,7 +159,7 @@ export const getRooms = async (req, res) => {
         $lt: nextDay.toISOString(),
       },
       moderator: req.user._id,
-    }).populate("participants moderator");
+    }).populate("moderator");
 
     res.status(200).send({ data: rooms, message: "Rooms fetched succefully" });
   } catch (error) {
