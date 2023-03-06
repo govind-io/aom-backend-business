@@ -29,34 +29,34 @@ export const generateToken = async (req, res) => {
     message: "Room Found Succesfully",
   });
 
-  if (!room.participants.includes(req.user._id)) {
-    room.participants = room.participants.concat(req.user._id);
+  // if (!room.participants.includes(req.user._id)) {
+  //   room.participants = room.participants.concat(req.user._id);
 
-    try {
-      // Save the updated room with the __v field
-      room = await room.save();
-    } catch (err) {
-      // Handle concurrent updates by merging changes
-      if (err.name === "VersionError") {
-        // Fetch the latest version of the document
-        const latestRoom = await Rooms.findOne({ meetingId: roomId });
+  //   try {
+  //     // Save the updated room with the __v field
+  //     room = await room.save();
+  //   } catch (err) {
+  //     // Handle concurrent updates by merging changes
+  //     if (err.name === "VersionError") {
+  //       // Fetch the latest version of the document
+  //       const latestRoom = await Rooms.findOne({ meetingId: roomId });
 
-        // Merge changes made by the current user with the latest version of the document
-        latestRoom.participants = Array.from(
-          new Set([...latestRoom.participants, ...room.participants])
-        );
+  //       // Merge changes made by the current user with the latest version of the document
+  //       latestRoom.participants = Array.from(
+  //         new Set([...latestRoom.participants, ...room.participants])
+  //       );
 
-        // Save the merged document with the __v field
-        try {
-          room = await latestRoom.save();
-        } catch (e) {
-          console.log("concurrent participants list update failed");
-        }
-      } else {
-        console.log("concurrent participants list update failed");
-      }
-    }
-  }
+  //       // Save the merged document with the __v field
+  //       try {
+  //         room = await latestRoom.save();
+  //       } catch (e) {
+  //         console.log("concurrent participants list update failed");
+  //       }
+  //     } else {
+  //       console.log("concurrent participants list update failed");
+  //     }
+  //   }
+  // }
 
   return;
 };
