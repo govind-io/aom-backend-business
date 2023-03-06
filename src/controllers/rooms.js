@@ -47,9 +47,13 @@ export const generateToken = async (req, res) => {
         );
 
         // Save the merged document with the __v field
-        room = await latestRoom.save();
+        try {
+          room = await latestRoom.save();
+        } catch (e) {
+          console.log("concurrent participants list update failed");
+        }
       } else {
-        throw err;
+        console.log("concurrent participants list update failed");
       }
     }
   }
