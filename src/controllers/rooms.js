@@ -22,18 +22,39 @@ export const generateToken = async (req, res) => {
     }
   }
 
-  if (!room.participants.includes(req.user._id)) {
-    room.participants = room.participants.concat(req.user._id);
-
-    await room.save();
-  }
-
   const formattedData = await room.populate("moderator");
 
-  return res.status(200).send({
+  res.status(200).send({
     data: formattedData,
     message: "Room Found Succesfully",
   });
+
+  if (!room.participants.includes(req.user._id)) {
+    room.participants = room.participants.concat(req.user._id);
+
+    try {
+      // Save the updated room with the __v field
+      room = await room.save();
+    } catch (err) {
+      // Handle concurrent updates by merging changes
+      if (err.name === "VersionError") {
+        // Fetch the latest version of the document
+        const latestRoom = await Rooms.findOne({ meetingId: roomId });
+
+        // Merge changes made by the current user with the latest version of the document
+        latestRoom.participants = Array.from(
+          new Set([...latestRoom.participants, ...room.participants])
+        );
+
+        // Save the merged document with the __v field
+        room = await latestRoom.save();
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  return;
 };
 
 export const createRoom = async (req, res) => {
