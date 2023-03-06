@@ -13,7 +13,6 @@ const RoomsSchema = mongoose.Schema({
   },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "Users" }],
   messages: [{ type: String }],
-  token: { type: String, required: true },
   moderator: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
@@ -32,8 +31,8 @@ const RoomsSchema = mongoose.Schema({
 RoomsSchema.methods.toJSON = function () {
   const room = this;
   const roomObject = room.toObject();
-  delete roomObject.participants
-  delete roomObject.messages
+  delete roomObject.participants;
+  delete roomObject.messages;
 
   return roomObject;
 };

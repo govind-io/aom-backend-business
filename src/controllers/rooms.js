@@ -1,12 +1,33 @@
-import axios from "axios";
 import { Rooms } from "../database/Rooms/index.js";
 import { StringToISO } from "../utils/DateUtils.js";
 import { getRoomsCountForMonthAndModerator } from "../utils/GetRoomCountForMonth.js";
 import generateUniqueString from "../utils/meetingIdGenerator.js";
+import { AccessToken } from "livekit-server-sdk";
+
+const getMeetToken = (uid, roomName) => {
+  const at = new AccessToken(
+    process.env.LIVEKIT_API_KEY,
+    process.env.LIVEKIT_API_SECRET,
+    {
+      identity: uid,
+    }
+  );
+
+  at.addGrant({
+    roomJoin: true,
+    room: roomName,
+    canPublish: true,
+    canSubscribe: true,
+  });
+
+  const token = at.toJwt();
+
+  return token;
+};
 
 export const generateToken = async (req, res) => {
   const roomId = req.params.id;
-  const { pin } = req.body;
+  const { pin, name } = req.body;
 
   const room = await Rooms.findOne({ meetingId: roomId });
 
@@ -22,41 +43,21 @@ export const generateToken = async (req, res) => {
     }
   }
 
-  const formattedData = await room.populate("moderator");
+  let formattedData = await room.populate("moderator");
+
+  formattedData = formattedData.toJSON();
+
+  const token = getMeetToken(
+    `${req.user.username}-${name || req.user.username}`,
+    roomId
+  );
+
+  formattedData.token = token;
 
   res.status(200).send({
     data: formattedData,
     message: "Room Found Succesfully",
   });
-
-  // if (!room.participants.includes(req.user._id)) {
-  //   room.participants = room.participants.concat(req.user._id);
-
-  //   try {
-  //     // Save the updated room with the __v field
-  //     room = await room.save();
-  //   } catch (err) {
-  //     // Handle concurrent updates by merging changes
-  //     if (err.name === "VersionError") {
-  //       // Fetch the latest version of the document
-  //       const latestRoom = await Rooms.findOne({ meetingId: roomId });
-
-  //       // Merge changes made by the current user with the latest version of the document
-  //       latestRoom.participants = Array.from(
-  //         new Set([...latestRoom.participants, ...room.participants])
-  //       );
-
-  //       // Save the merged document with the __v field
-  //       try {
-  //         room = await latestRoom.save();
-  //       } catch (e) {
-  //         console.log("concurrent participants list update failed");
-  //       }
-  //     } else {
-  //       console.log("concurrent participants list update failed");
-  //     }
-  //   }
-  // }
 
   return;
 };
@@ -70,106 +71,65 @@ export const createRoom = async (req, res) => {
       .send({ message: "Passcode is required when passcode is enabled" });
   }
 
-  const generateMeetToken = (room) => {
-    return axios({
-      url: `${process.env.MEET_URL}/generate-token`,
-      data: {
-        room,
-      },
-      headers: {
-        Authorization: `${process.env.CLIENT_TOKEN}`,
-      },
-      method: "POST",
-    });
-  };
-
   if (personal) {
     const personalMeetingId = req.user.meetingId.toUpperCase();
 
-    try {
-      const response = await generateMeetToken(personalMeetingId);
+    let room = await Rooms.findOne({ meetingId: personalMeetingId });
 
-      if (response.status !== 200) {
-        return res.status(500).send({ message: "Something went wrong" });
-      }
+    if (room) {
+      room.participants = [req.user._id];
+      room.messages = [];
+      room.name = name;
+      room.moderator = req.user._id;
+      room.passcode = passcode;
+      room.pin = passcode ? pin : undefined;
+      room.start = start;
+      room.end = end;
+      room.deleted = false;
 
-      const token = response.data.token;
+      await room.save();
+    } else {
+      room = new Rooms({
+        name: name,
+        messages: [],
+        participants: [req.user._id],
+        moderator: req.user._id,
+        meetingId: personalMeetingId,
+        passcode,
+        pin: passcode ? pin : undefined,
+        start,
+        end,
+        deleted: false,
+      });
 
-      let room = await Rooms.findOne({ meetingId: personalMeetingId });
-
-      if (room) {
-        room.participants = [req.user._id];
-        room.messages = [];
-        room.name = name;
-        room.token = token;
-        room.moderator = req.user._id;
-        room.passcode = passcode;
-        room.pin = passcode ? pin : undefined;
-        room.start = start;
-        room.end = end;
-        room.deleted = false;
-
-        await room.save();
-      } else {
-        room = new Rooms({
-          name: name,
-          messages: [],
-          participants: [req.user._id],
-          token,
-          moderator: req.user._id,
-          meetingId: personalMeetingId,
-          passcode,
-          pin: passcode ? pin : undefined,
-          start,
-          end,
-          deleted: false,
-        });
-
-        await room.save();
-      }
-      const formattedData = await room.populate("moderator");
-      return res
-        .status(200)
-        .send({ message: "Room Created Successfully", data: formattedData });
-    } catch (e) {
-      return res.status(500).send({ message: "Something went wrong" });
+      await room.save();
     }
+    const formattedData = await room.populate("moderator");
+    return res
+      .status(200)
+      .send({ message: "Room Created Successfully", data: formattedData });
   }
 
   const randomMeetingId = generateUniqueString(req.user.username).toUpperCase();
 
-  try {
-    const response = await generateMeetToken(randomMeetingId);
+  const room = new Rooms({
+    name: name,
+    moderator: req.user._id,
+    meetingId: randomMeetingId,
+    participants: [req.user._id],
+    messages: [],
+    passcode,
+    pin: passcode ? pin : undefined,
+    start,
+    end,
+    deleted: false,
+  });
 
-    if (response.status !== 200) {
-      return res.status(500).send({ message: "Something went wrong" });
-    }
-
-    const token = response.data.token;
-
-    const room = new Rooms({
-      name: name,
-      moderator: req.user._id,
-      token,
-      meetingId: randomMeetingId,
-      participants: [req.user._id],
-      messages: [],
-      passcode,
-      pin: passcode ? pin : undefined,
-      start,
-      end,
-      deleted: false,
-    });
-
-    await room.save();
-    const formattedData = await room.populate("moderator");
-    res
-      .status(200)
-      .send({ message: "Room Created Successfully", data: formattedData });
-  } catch (e) {
-    console.log("error occured", e.message);
-    return res.status(500).send({ message: "Something went wrong" });
-  }
+  await room.save();
+  const formattedData = await room.populate("moderator");
+  res
+    .status(200)
+    .send({ message: "Room Created Successfully", data: formattedData });
 };
 
 export const getRooms = async (req, res) => {
