@@ -2,20 +2,27 @@ import { Rooms } from "../database/Rooms/index.js";
 import { StringToISO } from "../utils/DateUtils.js";
 import { getRoomsCountForMonthAndModerator } from "../utils/GetRoomCountForMonth.js";
 import generateUniqueString from "../utils/meetingIdGenerator.js";
-import { AccessToken } from "livekit-server-sdk";
+import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
 
-const getMeetToken = (uid, roomName) => {
+const RoomManager = new RoomServiceClient(
+  process.env.MEET_URL,
+  process.env.LIVEKIT_API_KEY,
+  process.env.LIVEKIT_API_SECRET
+);
+
+const getMeetToken = ({ identity, roomId, name }) => {
   const at = new AccessToken(
     process.env.LIVEKIT_API_KEY,
     process.env.LIVEKIT_API_SECRET,
     {
-      identity: uid,
+      identity,
+      name,
     }
   );
 
   at.addGrant({
     roomJoin: true,
-    room: roomName,
+    room: roomId,
     canPublish: true,
     canSubscribe: true,
   });
@@ -47,10 +54,11 @@ export const generateToken = async (req, res) => {
 
   formattedData = formattedData.toJSON();
 
-  const token = getMeetToken(
-    `${req.user.username}-${name || req.user.username}`,
-    roomId
-  );
+  const token = getMeetToken({
+    identity: `${req.user.username}-${name || req.user.username}`,
+    roomId: roomId,
+    name,
+  });
 
   formattedData.token = token;
 
@@ -166,10 +174,15 @@ export const deleteRoom = async (req, res) => {
   }
 
   room.deleted = true;
+  try {
+    await RoomManager.deleteRoom(room.meetingId);
 
-  await room.save();
+    await room.save();
 
-  return res.status(200).send({ message: "Meeting deleted succesfully" });
+    return res.status(200).send({ message: "Meeting deleted succesfully" });
+  } catch (e) {
+    return res.status(500).send({ message: "Something went wrong" });
+  }
 };
 
 export const getRoomCountsByDate = async (req, res) => {
