@@ -11,8 +11,6 @@ const RoomsSchema = mongoose.Schema({
     lowercase: true,
     unique: true,
   },
-  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "Users" }],
-  messages: [{ type: String }],
   moderator: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
@@ -28,10 +26,15 @@ const RoomsSchema = mongoose.Schema({
   },
 });
 
+RoomsSchema.virtual("roommessages", {
+  ref: "Message",
+  localField: "meetingId",
+  foreignField: "meetingId",
+});
+
 RoomsSchema.methods.toJSON = function () {
   const room = this;
   const roomObject = room.toObject();
-  delete roomObject.participants;
   delete roomObject.messages;
 
   return roomObject;

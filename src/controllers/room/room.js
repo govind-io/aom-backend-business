@@ -1,14 +1,9 @@
-import { Rooms } from "../database/Rooms/index.js";
-import { StringToISO } from "../utils/DateUtils.js";
-import { getRoomsCountForMonthAndModerator } from "../utils/GetRoomCountForMonth.js";
-import generateUniqueString from "../utils/meetingIdGenerator.js";
-import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
-
-const RoomManager = new RoomServiceClient(
-  process.env.MEET_URL,
-  process.env.LIVEKIT_API_KEY,
-  process.env.LIVEKIT_API_SECRET
-);
+import { Rooms } from "../../database/rooms.js";
+import { StringToISO } from "../../utils/DateUtils.js";
+import { getRoomsCountForMonthAndModerator } from "../../utils/GetRoomCountForMonth.js";
+import generateUniqueString from "../../utils/meetingIdGenerator.js";
+import { AccessToken } from "livekit-server-sdk";
+import { RoomManager } from "../../utils/MeetingConstants.js";
 
 const getMeetToken = ({ identity, roomId, name }) => {
   const at = new AccessToken(
@@ -55,7 +50,7 @@ export const generateToken = async (req, res) => {
   formattedData = formattedData.toJSON();
 
   const token = getMeetToken({
-    identity: `${req.user.username}-${name || req.user.username}`,
+    identity: `${req.user.username}`,
     roomId: roomId,
     name,
   });
@@ -85,7 +80,6 @@ export const createRoom = async (req, res) => {
     let room = await Rooms.findOne({ meetingId: personalMeetingId });
 
     if (room) {
-      room.participants = [req.user._id];
       room.messages = [];
       room.name = name;
       room.moderator = req.user._id;
@@ -100,7 +94,6 @@ export const createRoom = async (req, res) => {
       room = new Rooms({
         name: name,
         messages: [],
-        participants: [req.user._id],
         moderator: req.user._id,
         meetingId: personalMeetingId,
         passcode,
@@ -124,7 +117,6 @@ export const createRoom = async (req, res) => {
     name: name,
     moderator: req.user._id,
     meetingId: randomMeetingId,
-    participants: [req.user._id],
     messages: [],
     passcode,
     pin: passcode ? pin : undefined,

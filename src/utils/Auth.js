@@ -1,4 +1,4 @@
-import { Users } from "../database/Users/index.js";
+import { Users } from "../database/users.js";
 import GetUser from "./GetUser.js";
 import generateRandomString from "./meetingIdGenerator.js";
 export const userAuth = async (req, res, next) => {
@@ -30,7 +30,6 @@ export const userAuth = async (req, res, next) => {
         username: user.username,
         userId: user.user_id,
         name: user.name || "",
-        token,
         meetingId: generateRandomString(user.username).toUpperCase(),
       });
 

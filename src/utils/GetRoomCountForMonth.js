@@ -1,4 +1,4 @@
-import { Rooms } from "../database/Rooms/index.js";
+import { Rooms } from "../database/rooms.js";
 
 export const getRoomsCountForMonthAndModerator = async (month, moderator) => {
   const firstDay = new Date(2023, month - 1, 1);

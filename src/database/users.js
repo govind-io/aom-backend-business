@@ -14,11 +14,6 @@ const UsersSchema = mongoose.Schema({
     trim: true,
     lowercase: true,
   },
-  token: {
-    type: String,
-    unique: true,
-    required: true,
-  },
   meetingId: {
     type: String,
     unique: true,
@@ -31,6 +26,12 @@ UsersSchema.virtual("roomasparticipant", {
   ref: "Room",
   localField: "_id",
   foreignField: "participants",
+});
+
+UsersSchema.virtual("messageowner", {
+  ref: "Message",
+  localField: "_id",
+  foreignField: "by",
 });
 
 UsersSchema.virtual("roomasmoderator", {
